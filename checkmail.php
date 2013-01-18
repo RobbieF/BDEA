@@ -45,12 +45,26 @@ if (isset($_POST['name']) && isset($_POST['email'])) {
   $email = strip_tags($_POST['email']);
 
   // check the email address
+  // Note: during the live show, we used && checkmail($email), which works, but I've since improved it slightly
+  //       so the API will NOT be queried if the email address fails normal PHP validation.
+  //       This will reduce your API calls.
   // Because this is ONLY AN EXAMPLE, you can run through as many checks as you want before running checkmail() - eg., test to ensure the domain is real (has a DNS record)
-  if(filter_var($email, FILTER_VALIDATE_EMAIL) && checkmail($email)) {
-      $message = 'Email address is considered <font color="green">good</font>. Registration will proceed.';
-  } else {
+  if(filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      if (checkmail($email)) { // note: now we are ONLY using checkmail() if the email address already passed FILTER_VALIDATE_EMAIL
+        // in this instance, the email address passes both PHP's check and checkmail() - it is most likely not a Disposable Email Account
+        $message = 'Email address is considered <font color="green">good</font>. Registration will proceed.';
+        $summary .= 'In this instance, the email address passes both PHP\'s check and checkmail() - it is most likely not a Disposable Email Account';
+      } else {
+        // in this instance, PHP said the address was good, but checkmail() (the API) said it is a Disposable Email Account
+        $message = 'Email address is considered <font color="red">bad</font>. Registration will be rejected.';
+        $summary .= 'In this instance, PHP said the address was good, but checkmail() (the API) said it is a Disposable Email Account';
+      }
+    } else {
+      // in this instance, the email address failed PHP's normal email address validity check (eg., malformed email address submitted)
+      // the email address was never passed to checkmail() and so it doesn't count against your monthly quota for the API
       $message = 'Email address is considered <font color="red">bad</font>. Registration will be rejected.';
-  }
+      $summary .= 'In this instance, the email address failed PHP\'s normal email address validity check (eg., malformed email address submitted)... the email address was never passed to checkmail() and so it doesn\'t count against your monthly quota for the API';
+    }
 }
 ?>
 <!DOCTYPE html>
