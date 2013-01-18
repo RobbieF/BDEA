@@ -12,6 +12,32 @@
   Rather, it is a demonstration of what you could do with the DEA API.
   What you do with the true or false result is up to you, as explained in the video.
 */
+function checkmail($email) {
+  $domain = array_pop(explode('@', $email));
+  
+  $key = '88af6a47e353c3d43d3ce9b7b9c68d10'; // put your API Key here. Get your API key via http://cat5.tv/badmail
+  // IMPORTANT: if you add your API key above and the API returns "fail_key_low_credits" (do a print_r() as shown in the video)
+  //            it probably means your new API key hasn't propagated the system yet.  Pour a coffee; it'll work in a few minutes.
+  
+  $request = 'http://check.block-disposable-email.com/easyapi/json/' . $key . '/' . $domain;
+  
+  $response = file_get_contents($request);
+  
+  $dea = json_decode($response);
+  
+  if ($dea->request_status == 'success') {
+    if ($dea->domain_status == 'block') {
+      //Access Denied
+      return false;
+    } else {
+      // Access Granted
+      return true;
+    }
+  } else {
+    // something else went wrong with the address (maybe a malformed domain)
+    return false;
+  }
+}
 
 if (isset($_POST['name']) && isset($_POST['email'])) {
   // strip malicious code & set strings
@@ -19,10 +45,11 @@ if (isset($_POST['name']) && isset($_POST['email'])) {
   $email = strip_tags($_POST['email']);
 
   // check the email address
-  if(filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $message = 'Email address is considered <font color="green">good</font>. Registration will proceed.';
+  // Because this is ONLY AN EXAMPLE, you can run through as many checks as you want before running checkmail() - eg., test to ensure the domain is real (has a DNS record)
+  if(filter_var($email, FILTER_VALIDATE_EMAIL) && checkmail($email)) {
+      $message = 'Email address is considered <font color="green">good</font>. Registration will proceed.';
   } else {
-        $message = 'Email address is considered <font color="red">bad</font>. Registration will be rejected.';
+      $message = 'Email address is considered <font color="red">bad</font>. Registration will be rejected.';
   }
 }
 ?>
